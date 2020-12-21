@@ -2,23 +2,23 @@ import React from 'react'
 import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 
 import { Root } from '@lib/components'
-import useCache, { CacheContext } from '@lib/utils/useCache'
+import { SingleCacheContext, useSingleCache } from '@lib/utils/useCache'
 
 import { Detail, List } from './pages'
 
 export default function () {
-  const statementCacheMgr = useCache()
+  const statementCacheMgr = useSingleCache()
 
   return (
     <Root>
-      <CacheContext.Provider value={statementCacheMgr}>
+      <SingleCacheContext.Provider value={statementCacheMgr}>
         <Router>
           <Routes>
             <Route path="/statement" element={<List />} />
             <Route path="/statement/detail" element={<Detail />} />
           </Routes>
         </Router>
-      </CacheContext.Provider>
+      </SingleCacheContext.Provider>
     </Root>
   )
 }

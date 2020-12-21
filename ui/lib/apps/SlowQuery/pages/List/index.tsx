@@ -26,7 +26,7 @@ import {
   Toolbar,
   MultiSelect,
 } from '@lib/components'
-import { CacheContext } from '@lib/utils/useCache'
+import { SingleCacheContext } from '@lib/utils/useCache'
 
 import SlowQueriesTable from '../../components/SlowQueriesTable'
 import useSlowQueryTableController, {
@@ -43,7 +43,7 @@ const LIMITS = [100, 200, 500, 1000]
 function List() {
   const { t } = useTranslation()
 
-  const slowQueryCacheMgr = useContext(CacheContext)
+  const slowQueryCacheMgr = useContext(SingleCacheContext)
 
   const [visibleColumnKeys, setVisibleColumnKeys] = useLocalStorageState(
     SLOW_QUERY_VISIBLE_COLUMN_KEYS,

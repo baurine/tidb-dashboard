@@ -1,18 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSessionStorageState } from 'ahooks'
 import { IColumn } from 'office-ui-fabric-react/lib/DetailsList'
 
 import client, { ErrorStrategy, SlowquerySlowQuery } from '@lib/client'
-import {
-  calcTimeRange,
-  TimeRange,
-  IColumnKeys,
-  stringifyTimeRange,
-} from '@lib/components'
+import { calcTimeRange, TimeRange, IColumnKeys } from '@lib/components'
 import useOrderState, { IOrderOptions } from '@lib/utils/useOrderState'
 
 import { getSelectedFields } from '@lib/utils/tableColumnFactory'
-import { CacheMgr } from '@lib/utils/useCache'
+import { SingleCacheMgr } from '@lib/utils/useCache'
 
 import { derivedFields, slowQueryColumns } from './tableColumns'
 
@@ -72,7 +67,7 @@ export interface ISlowQueryTableController {
 }
 
 export default function useSlowQueryTableController(
-  cacheMgr: CacheMgr | null,
+  cacheMgr: SingleCacheMgr | null,
   visibleColumnKeys: IColumnKeys,
   showFullSQL: boolean,
   options?: ISlowQueryOptions,
@@ -120,26 +115,18 @@ export default function useSlowQueryTableController(
     [visibleColumnKeys]
   )
 
-  const cacheKey = useMemo(() => {
-    const {
-      schemas,
-      digest,
-      limit,
-      plans,
-      searchText,
-      timeRange,
-    } = queryOptions
-    const { desc, orderBy } = orderOptions
-    const cacheKey = `${schemas.join(',')}_${digest}_${limit}_${plans.join(
-      ','
-    )}_${searchText}_${stringifyTimeRange(
-      timeRange
-    )}_${desc}_${orderBy}_${selectedFields}`
-    return cacheKey
-  }, [queryOptions, orderOptions, selectedFields])
+  const isOnMount = useRef(true)
+  useEffect(() => {
+    if (!isOnMount.current) {
+      cacheMgr?.remove()
+    }
+    if (isOnMount.current) {
+      isOnMount.current = false
+    }
+  }, [queryOptions, orderOptions, selectedFields, cacheMgr])
 
   function refresh() {
-    cacheMgr?.remove(cacheKey)
+    cacheMgr?.remove()
 
     setErrors([])
     setRefreshTimes((prev) => prev + 1)
@@ -167,7 +154,7 @@ export default function useSlowQueryTableController(
 
   useEffect(() => {
     async function getSlowQueryList() {
-      const cacheItem = cacheMgr?.get(cacheKey)
+      const cacheItem = cacheMgr?.value()
       if (cacheItem) {
         setSlowQueries(cacheItem)
         return
@@ -193,7 +180,7 @@ export default function useSlowQueryTableController(
             }
           )
         setSlowQueries(res.data || [])
-        cacheMgr?.set(cacheKey, res.data || [])
+        cacheMgr?.set(res.data || [])
         setErrors([])
       } catch (e) {
         setErrors((prev) => prev.concat(e))
@@ -207,7 +194,6 @@ export default function useSlowQueryTableController(
     queryTimeRange,
     selectedFields,
     refreshTimes,
-    cacheKey,
     cacheMgr,
   ])
 

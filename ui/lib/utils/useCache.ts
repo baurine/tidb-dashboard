@@ -70,7 +70,7 @@ export default function useCache(
 //////////////////////////////////////
 
 export type SingleCacheMgr = {
-  get: () => any
+  value: () => any
   set: (val: any, expire?: number) => void
   remove: () => void
 }
@@ -84,7 +84,7 @@ export function useSingleCache(
   const { get, set, remove } = useCache(1, globalExpire)
 
   return {
-    get: () => get(cacheKey),
+    value: () => get(cacheKey),
     set: (val, expire?: number) => set(cacheKey, val, expire),
     remove: () => remove(cacheKey),
   }

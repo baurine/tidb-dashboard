@@ -22,7 +22,7 @@ import {
 import { ScrollablePane } from 'office-ui-fabric-react/lib/ScrollablePane'
 import { useTranslation } from 'react-i18next'
 
-import { CacheContext } from '@lib/utils/useCache'
+import { SingleCacheContext } from '@lib/utils/useCache'
 import { Card, ColumnsSelector, Toolbar, MultiSelect } from '@lib/components'
 
 import { StatementsTable } from '../../components'
@@ -40,7 +40,7 @@ const STMT_SHOW_FULL_SQL = 'statement.show_full_sql'
 export default function StatementsOverview() {
   const { t } = useTranslation()
 
-  const statementCacheMgr = useContext(CacheContext)
+  const statementCacheMgr = useContext(SingleCacheContext)
 
   const [showSettings, setShowSettings] = useState(false)
   const [visibleColumnKeys, setVisibleColumnKeys] = useLocalStorageState(

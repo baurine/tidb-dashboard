@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSessionStorageState } from 'ahooks'
 import { IColumn } from 'office-ui-fabric-react/lib/DetailsList'
 
@@ -7,10 +7,10 @@ import client, {
   StatementModel,
   StatementTimeRange,
 } from '@lib/client'
-import { IColumnKeys, stringifyTimeRange } from '@lib/components'
+import { IColumnKeys } from '@lib/components'
 import useOrderState, { IOrderOptions } from '@lib/utils/useOrderState'
 import { getSelectedFields } from '@lib/utils/tableColumnFactory'
-import { CacheMgr } from '@lib/utils/useCache'
+import { SingleCacheMgr } from '@lib/utils/useCache'
 
 import {
   calcValidStatementTimeRange,
@@ -74,7 +74,7 @@ export interface IStatementTableController {
 }
 
 export default function useStatementTableController(
-  cacheMgr: CacheMgr | null,
+  cacheMgr: SingleCacheMgr | null,
   visibleColumnKeys: IColumnKeys,
   showFullSQL: boolean,
   options?: IStatementQueryOptions,
@@ -128,16 +128,18 @@ export default function useStatementTableController(
     [visibleColumnKeys]
   )
 
-  const cacheKey = useMemo(() => {
-    const { schemas, stmtTypes, searchText, timeRange } = queryOptions
-    const cacheKey = `${schemas.join(',')}_${stmtTypes.join(
-      ','
-    )}_${searchText}_${stringifyTimeRange(timeRange)}_${selectedFields}`
-    return cacheKey
-  }, [queryOptions, selectedFields])
+  const isOnMount = useRef(true)
+  useEffect(() => {
+    if (!isOnMount.current) {
+      cacheMgr?.remove()
+    }
+    if (isOnMount.current) {
+      isOnMount.current = false
+    }
+  }, [queryOptions, selectedFields, cacheMgr])
 
   function refresh() {
-    cacheMgr?.remove(cacheKey)
+    cacheMgr?.remove()
 
     setErrors([])
     setLoadingStatements(true)
@@ -202,7 +204,7 @@ export default function useStatementTableController(
 
   useEffect(() => {
     async function queryStatementList() {
-      const cacheItem = cacheMgr?.get(cacheKey)
+      const cacheItem = cacheMgr?.value()
       if (cacheItem) {
         setStatements(cacheItem)
         return
@@ -228,7 +230,7 @@ export default function useStatementTableController(
             }
           )
         setStatements(res?.data || [])
-        cacheMgr?.set(cacheKey, res?.data || [])
+        cacheMgr?.set(res?.data || [])
         setErrors([])
       } catch (e) {
         setErrors((prev) => prev.concat(e))
@@ -237,14 +239,7 @@ export default function useStatementTableController(
     }
 
     queryStatementList()
-  }, [
-    queryOptions,
-    allTimeRanges,
-    validTimeRange,
-    selectedFields,
-    cacheKey,
-    cacheMgr,
-  ])
+  }, [queryOptions, allTimeRanges, validTimeRange, selectedFields, cacheMgr])
 
   const [downloading, setDownloading] = useState(false)
 
