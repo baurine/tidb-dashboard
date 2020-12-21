@@ -54,8 +54,7 @@ export default function useCache(
       .filter((k) => k !== key)
       .concat(key)
     // if size beyonds the capacity
-    // remove the first one
-    if (cacheItemKeys.current.length > capacity) {
+    while (capacity > 0 && cacheItemKeys.current.length > capacity) {
       remove(cacheItemKeys.current[0])
     }
   }
@@ -66,4 +65,27 @@ export default function useCache(
   }
 
   return { get, set, remove }
+}
+
+//////////////////////////////////////
+
+export type SingleCacheMgr = {
+  get: () => any
+  set: (val: any, expire?: number) => void
+  remove: () => void
+}
+
+export const SingleCacheContext = createContext<SingleCacheMgr | null>(null)
+
+export function useSingleCache(
+  globalExpire: number = ONE_HOUR_TIME
+): SingleCacheMgr {
+  const cacheKey = 'single_cache'
+  const { get, set, remove } = useCache(1, globalExpire)
+
+  return {
+    get: () => get(cacheKey),
+    set: (val, expire?: number) => set(cacheKey, val, expire),
+    remove: () => remove(cacheKey),
+  }
 }
